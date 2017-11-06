@@ -75,17 +75,12 @@ app.post('/links', (req, res, next) => {
 /************************************************************/
 
 app.post('/signup', (req, res, next) => {
-  models.Users.get({username: req.body.username})
-    .then(result => {
-      if (result !== undefined) {
-        res.redirect('/signup');
-      } else {
-        let user = req.body;
-        models.Users.create(user)
-          .then(() => res.redirect('/'));
-      }
-    });
+  Auth.signUpUser(req, res, next);
 }); 
+
+app.post('/login', (req, res, next) => {
+  Auth.loginUser(req, res, next);
+});
 
 /************************************************************/
 // Handle the code parameter route last - if all other routes fail
