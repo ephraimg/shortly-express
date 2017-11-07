@@ -4,40 +4,63 @@ const Promise = require('bluebird');
 
 
 module.exports.createSession = (req, res, next) => {
-  if (req.cookies['shortlyid']) {
-    req.session = req.session || {};
-    // grab the hash
-    var hash = req.cookies['shortlyid'];
-    // lookup session in table using hash
-    // console.log('\n------------ hash: ', hash);
-    models.Sessions.get({hash: hash})
-      .then(record => {
-        if (record) {
-          req.session.hash = record.hash;
-          // if there's associated userid, get the user
-          if (!record.userId) {
-            return module.exports.rebuildSession(req, res, next);
-          } else {
-            models.Users.get({id: record.userId})
-              .then(user => {
-                // attach userid, username to session
-                req.session.userId = user.id;
-                req.session.user = {username: user.username};
-                next();
-              })
-              .catch(err => {
-                console.error(err);
-                next();  
-              });
+  if (!req.cookies['shortlyid']) {
+    // create a new session
+    // set new cookie
+    return module.exports.setNewCookie(req, res, next);
+  } else {
+    // check if cookie is valid (it has a session)
+    getCookieSession(req, res, next)
+      .then(result => {
+        // if not, clear cookie and set new cookie
+        if (!result) { 
+          setNewCookie(req, res, next); 
+        } else {          
+          // put that session on the req
+          req.session = {
+            hash: result.hash,
+            session: {
+              userId: result.id,
+              user: {username: result.user}
+            }
           }
         }
+      })
+      .catch(err => {
+        console.error(err);
+        next();  
       });
-  }    
+  }  
 };
 
 
-module.exports.rebuildSession = (req, res, next) => {
-  models.Sessions.create()
+/************************************************************/
+// Add additional authentication middleware functions below
+/************************************************************/
+
+module.exports.getSessionUser = (req, res, next) => {
+  models.Users.get({id: req.userId})
+    .then(record => {
+      if (record && record.userId) {
+        return record;
+      } else {
+        return null;
+      }
+};
+
+module.exports.getCookieSession = (req, res, next) => {
+  var hash = req.cookies['shortlyid'];
+  models.Sessions.get({hash: hash})
+    .then(record => {
+      if (record && record.userId) {
+        return record;
+      } else {
+        return null;
+      }
+};
+
+module.exports.setNewCookie = (req, res, next) => {
+  return models.Sessions.create()
     .then(result => {
       return models.Sessions.get({id: result.insertId});
     })
@@ -51,10 +74,6 @@ module.exports.rebuildSession = (req, res, next) => {
       next();
     });  
 };
-
-/************************************************************/
-// Add additional authentication middleware functions below
-/************************************************************/
 
 module.exports.signUpUser = (req, res, next) => {
   models.Users.get({username: req.body.username})
