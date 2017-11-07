@@ -10,20 +10,19 @@ module.exports.createSession = (req, res, next) => {
     return module.exports.setNewCookie(req, res, next);
   } else {
     // check if cookie is valid (it has a session)
-    getCookieSession(req, res, next)
+    return module.exports.getCookieSession(req, res, next)
       .then(result => {
-        // if not, clear cookie and set new cookie
+        // if cookie not valid, clear it and set new cookie
         if (!result) { 
-          setNewCookie(req, res, next); 
+          return module.exports.setNewCookie(req, res, next); 
         } else {          
           // put that session on the req
           req.session = {
             hash: result.hash,
-            session: {
-              userId: result.id,
-              user: {username: result.user}
-            }
-          }
+            userId: result.id,
+            user: {username: result.user.username}
+          };
+          next();
         }
       })
       .catch(err => {
@@ -39,24 +38,28 @@ module.exports.createSession = (req, res, next) => {
 /************************************************************/
 
 module.exports.getSessionUser = (req, res, next) => {
-  models.Users.get({id: req.userId})
+  return models.Users.get({id: req.userId})
     .then(record => {
       if (record && record.userId) {
         return record;
       } else {
         return null;
       }
+      next();
+    });
 };
 
 module.exports.getCookieSession = (req, res, next) => {
   var hash = req.cookies['shortlyid'];
-  models.Sessions.get({hash: hash})
+  return models.Sessions.get({hash: hash})
     .then(record => {
       if (record && record.userId) {
         return record;
       } else {
         return null;
       }
+      next();
+    });
 };
 
 module.exports.setNewCookie = (req, res, next) => {
