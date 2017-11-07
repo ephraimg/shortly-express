@@ -12,9 +12,10 @@ const app = express();
 app.set('views', `${__dirname}/views`);
 app.set('view engine', 'ejs');
 app.use(partials());
-app.use(parseCookies);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(parseCookies);
+app.use(Auth.createSession);
 app.use(express.static(path.join(__dirname, '../public')));
 
 

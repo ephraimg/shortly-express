@@ -61,7 +61,7 @@ describe('', function() {
     afterEach(function() { server.close(); });
   });
 
-  describe('Database Schema:', function() {
+  xdescribe('Database Schema:', function() {
     it('contains a users table', function(done) {
       var queryString = 'SELECT * FROM users';
       db.query(queryString, function(err, results) {
@@ -123,7 +123,7 @@ describe('', function() {
     });
   });
 
-  describe('Account Creation:', function() {
+  xdescribe('Account Creation:', function() {
 
     it('signup creates a new user record', function(done) {
       var options = {
@@ -208,7 +208,7 @@ describe('', function() {
     });
   });
 
-  describe('Account Login:', function() {
+  xdescribe('Account Login:', function() {
 
     beforeEach(function(done) {
       var options = {
@@ -277,7 +277,7 @@ describe('', function() {
     });
   });
 
-  describe('Sessions Schema:', function() {
+  xdescribe('Sessions Schema:', function() {
     it('contains a sessions table', function(done) {
       var queryString = 'SELECT * FROM sessions';
       db.query(queryString, function(err, results) {
@@ -376,6 +376,9 @@ describe('', function() {
         var requestWithoutCookies = httpMocks.createRequest();
         var response = httpMocks.createResponse();
 
+        // reminder: createSession is defined above like this:
+        // var createSession = require('../server/middleware/auth.js').createSession;
+
         createSession(requestWithoutCookies, response, function() {
           var session = requestWithoutCookies.session;
           expect(session).to.exist;
@@ -441,13 +444,16 @@ describe('', function() {
         var username = 'BillZito';
 
         db.query('INSERT INTO users (username) VALUES (?)', username, function(error, results) {
+          // console.log('before record: ', results);
           if (error) { return done(error); }
           var userId = results.insertId;
 
           createSession(requestWithoutCookie, response, function() {
             var hash = requestWithoutCookie.session.hash;
             db.query('UPDATE sessions SET userId = ? WHERE hash = ?', [userId, hash], function(error, result) {
+              // console.log('after record: ', result);
 
+ 
               var secondResponse = httpMocks.createResponse();
               var requestWithCookies = httpMocks.createRequest();
               requestWithCookies.cookies.shortlyid = hash;
