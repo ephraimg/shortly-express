@@ -14,13 +14,13 @@ app.set('view engine', 'ejs');
 app.use(partials());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(parseCookies);
-// app.use(Auth.createSession);
 app.use(express.static(path.join(__dirname, '../public')));
 
+app.use(parseCookies);
+app.use(Auth.createSession);
+app.use(['/create', '/links'], Auth.verifySession);
 
-
-app.get('/', (req, res) => {
+app.get('/', Auth.verifySession, (req, res) => {
   res.render('index');
 });
 
@@ -77,13 +77,28 @@ app.post('/links', (req, res, next) => {
 // Write your authentication routes here
 /************************************************************/
 
-app.post('/signup', (req, res, next) => {
-  Auth.signUpUser(req, res, next);
+app.get('/login', (req, res, next) => {
+  res.render('login');
 }); 
 
 app.post('/login', (req, res, next) => {
   Auth.loginUser(req, res, next);
 });
+  
+app.get('/signup', (req, res, next) => {
+  res.render('signup');
+}); 
+
+app.post('/signup', (req, res, next) => {
+  Auth.signUpUser(req, res);
+}); 
+
+app.get('/logout', (req, res, next) => {
+  Auth.logoutUser(req, res);
+});
+
+
+
 
 /************************************************************/
 // Handle the code parameter route last - if all other routes fail
